@@ -10,6 +10,9 @@ Param (
 )
 
 $CombinedTargetFolder="$($TargetFolder)/$($ChapterName)"
+$CombinedTargetFolder = $CombinedTargetFolder.Replace("[", "(")
+$CombinedTargetFolder = $CombinedTargetFolder.Replace("]", ")")
+$CombinedTargetFolder = $CombinedTargetFolder.Replace(":", "")
 if (-not(Test-Path $CombinedTargetFolder)) {
 	New-Item -Path $CombinedTargetFolder -ItemType Directory
 }

@@ -101,6 +101,9 @@ if (Test-Path $MangaJsonName) {
 
 $MangaName = $response.data.attributes.title.en
 $CombinedTargetFolder="$($TargetFolder)/$($MangaName)"
+$CombinedTargetFolder = $CombinedTargetFolder.Replace("[", "(")
+$CombinedTargetFolder = $CombinedTargetFolder.Replace("]", ")")
+$CombinedTargetFolder = $CombinedTargetFolder.Replace(":", "")
 $mangaCover = ""
 
 if (-not(Test-Path $CombinedTargetFolder)) {
@@ -120,6 +123,7 @@ foreach($item in $response.data.relationships) {
 		$coverTargetName = $coverTargetName.Replace("/", "-")
 		$coverTargetName = $coverTargetName.Replace("[", "(")
 		$coverTargetName = $coverTargetName.Replace("]", ")")
+		$coverTargetName = $coverTargetName.Replace(":", "")
 		$coverTargetPath = "$($CombinedTargetFolder)/$($coverTargetName)"	
 		
 		if ($DryRun) {
