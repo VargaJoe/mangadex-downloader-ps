@@ -36,29 +36,9 @@ if (Test-Path $ChapterJsonName) {
 	$urlPath="at-home/server/$($ChapterId)?forcePort443=false"
 	$RequestUrl="https://api.mangadex.org/$($urlPath)"
 
-	$session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
-	$session.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.74 Safari/537.36"
 	try
 	{
-		$response = Invoke-RestMethod -UseBasicParsing -Uri $($RequestUrl) `
-			-WebSession $session `
-			-Headers @{
-				"method"="GET"
-				"authority"="api.mangadex.org"
-				"scheme"="https"
-				"path"="/$($urlPath)"
-				"sec-ch-ua"="`" Not A;Brand`";v=`"99`", `"Chromium`";v=`"99`", `"Google Chrome`";v=`"99`""
-				"accept"="application/json, text/plain, */*"
-				"sec-ch-ua-mobile"="?0"
-				"sec-ch-ua-platform"="`"Windows`""
-				"origin"="https://mangadex.org"
-				"sec-fetch-site"="same-site"
-				"sec-fetch-mode"="cors"
-				"sec-fetch-dest"="empty"
-				"referer"="https://mangadex.org/"
-				"accept-encoding"="gzip, deflate, br"
-				"accept-language"="en-US,en;q=0.9,hu-HU;q=0.8,hu;q=0.7"
-			}
+		$response = Invoke-RestMethod -UseBasicParsing -Uri $($RequestUrl) 
 		write-host "OK"
 	}
 	catch
@@ -99,26 +79,7 @@ foreach($item in $response.chapter.data) {
 	} else {
 		$skip = $false
 		write-host "Download $($downloadUrl) to $($targetPath)"
-		Invoke-WebRequest -UseBasicParsing -Uri $($downloadUrl) `
-			-OutFile $targetPath `
-			-WebSession $session `
-			-Headers @{
-				"method"="GET"
-				"authority"="api.mangadex.org"
-				"scheme"="https"
-				"path"="/$($dataPath)"
-				"sec-ch-ua"="`" Not A;Brand`";v=`"99`", `"Chromium`";v=`"99`", `"Google Chrome`";v=`"99`""
-				"accept"="application/json, text/plain, */*"
-				"sec-ch-ua-mobile"="?0"
-				"sec-ch-ua-platform"="`"Windows`""
-				"origin"="https://mangadex.org"
-				"sec-fetch-site"="same-site"
-				"sec-fetch-mode"="cors"
-				"sec-fetch-dest"="empty"
-				"referer"="https://mangadex.org/"
-				"accept-encoding"="gzip, deflate, br"
-				"accept-language"="en-US,en;q=0.9,hu-HU;q=0.8,hu;q=0.7"
-			}
+		Invoke-WebRequest -UseBasicParsing -Uri $($downloadUrl) -OutFile $targetPath 
 	}
 }
 

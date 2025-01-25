@@ -103,29 +103,9 @@ do {
 		$urlPath="manga/$($MangaId)/feed?limit=$($limit)&translatedLanguage[]=$($Language)&includes[]=scanlation_group&includes[]=user&order[volume]=asc&order[chapter]=asc&offset=$($offset)&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic"
 		$RequestUrl="https://api.mangadex.org/$($urlPath)"
 
-		$session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
-		$session.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.74 Safari/537.36"
 		try
 		{
-			$response = Invoke-RestMethod -UseBasicParsing -Uri $($RequestUrl) `
-				-WebSession $session `
-				-Headers @{
-					"method"="GET"
-					"authority"="api.mangadex.org"
-					"scheme"="https"
-					"path"="/$($urlPath)"
-					"sec-ch-ua"="`" Not A;Brand`";v=`"99`", `"Chromium`";v=`"99`", `"Google Chrome`";v=`"99`""
-					"accept"="application/json, text/plain, */*"
-					"sec-ch-ua-mobile"="?0"
-					"sec-ch-ua-platform"="`"Windows`""
-					"origin"="https://mangadex.org"
-					"sec-fetch-site"="same-site"
-					"sec-fetch-mode"="cors"
-					"sec-fetch-dest"="empty"
-					"referer"="https://mangadex.org/"
-					"accept-encoding"="gzip, deflate, br"
-					"accept-language"="en-US,en;q=0.9,hu-HU;q=0.8,hu;q=0.7"
-				}
+			$response = Invoke-RestMethod -UseBasicParsing -Uri $($RequestUrl) 
 			write-host "OK"
 		}
 		catch
