@@ -1,29 +1,21 @@
 Param (
+	# Full URL of the manga on Mangadex
 	[Parameter(Mandatory=$False)]
 	[string]$MangadexUrl,
-    [Parameter(Mandatory=$False)]
+
+	# ID and Title of the manga on Mangadex
+	[Parameter(Mandatory=$False)]
 	[string]$MangaId,
-	
 	[Parameter(Mandatory=$False)]
 	[string]$MangaName="$($MangaId)",
-	[Parameter(Mandatory=$False)]
-	[string]$Language="en",	
-	[Parameter(Mandatory=$False)]
-	[int]$VolFrom,
-	[Parameter(Mandatory=$False)]
-	[int]$ChapFrom,
-	[Parameter(Mandatory=$False)]
-	[int]$VolTo,
-	[Parameter(Mandatory=$False)]
-	[int]$ChapTo,
-	[Parameter(Mandatory=$False)]
-	[string]$VolFormat="d2",
-	[Parameter(Mandatory=$False)]
-	[string]$ChapFormat="d2",
+
+	# Technical parameters
 	[Parameter(Mandatory=$False)]
 	[string]$TargetFolder="./Output",
 	[Parameter(Mandatory=$False)]
-	[bool]$DryRun=$False
+	[bool]$SaveInfo = $True,
+	[Parameter(Mandatory=$False)]
+	[switch]$DryRun
 )
 
 # pagination is missing
@@ -47,18 +39,21 @@ if ($MangadexUrl) {
 	}
 }
 
-if (-not(Test-Path $TargetFolder)) {
-	New-Item -Path $TargetFolder -ItemType Directory
-}
 
-$MangaJsonName = "$($TargetFolder)/manga-$($MangaId)-($($Language))-base.json"
+$InfoFolder = "./info"
+$MangaInfoJsonName = "$($InfoFolder)/manga-info-$($MangaId)-$($MangaName).json"
 
-write-host $MangaJsonName
+write-host "$MangaName base info json: $MangaInfoJsonName"
 
-if (Test-Path $MangaJsonName) {
+if (Test-Path $MangaInfoJsonName) {
 	write-host "manga base json file already exists, we will use that"
-	$response = Get-Content $MangaJsonName | ConvertFrom-Json
+	$response = Get-Content $MangaInfoJsonName | ConvertFrom-Json
 } else {
+	if (-not (Test-Path $InfoFolder)) {
+		write-host "Creating $($InfoFolder) folder"
+		New-Item -Path $InfoFolder -ItemType Directory
+	}
+
 	write-host "manga base json file does not exists, we will get from site"
 	$urlPath="manga/$($MangaId)?includes[]=artist&includes[]=author&includes[]=cover_art"
 	$RequestUrl="https://api.mangadex.org/$($urlPath)"
@@ -96,17 +91,21 @@ if (Test-Path $MangaJsonName) {
 
 	write-host $StatusCode
 
-	$response | ConvertTo-Json -depth 100 | Out-File $MangaJsonName
+	if ($SaveInfo) {
+		$response | ConvertTo-Json -depth 100 | Out-File $MangaInfoJsonName
+	}
 } 
 
+$mangaCover = ""
 $MangaName = $response.data.attributes.title.en
 $CombinedTargetFolder="$($TargetFolder)/$($MangaName)"
 $CombinedTargetFolder = $CombinedTargetFolder.Replace("[", "(")
 $CombinedTargetFolder = $CombinedTargetFolder.Replace("]", ")")
-$CombinedTargetFolder = $CombinedTargetFolder.Replace(":", "")
-$mangaCover = ""
+$CombinedTargetFolder = $CombinedTargetFolder.Replace("?", "")
+$CombinedTargetFolder = $CombinedTargetFolder -replace '\s+', ' '
 
 if (-not(Test-Path $CombinedTargetFolder)) {
+	write-host "Creating $($CombinedTargetFolder) folder"
 	New-Item -Path $CombinedTargetFolder -ItemType Directory
 }
 
@@ -157,5 +156,8 @@ foreach($item in $response.data.relationships) {
 	}
 }
 
-.\get-manga.ps1 -MangaId $MangaId -MangaName $MangaName -Language $Language -VolFrom $VolFrom -ChapFrom $ChapFrom -VolTo $VolTo -ChapTo $ChapTo -VolFormat $VolFormat -ChapFormat $ChapFormat -TargetFolder $TargetFolder -DryRun $DryRun
-
+return @{
+    MangaId = $MangaId
+    MangaName = $MangaName
+    CombinedTargetFolder = $CombinedTargetFolder
+}

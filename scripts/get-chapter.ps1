@@ -12,7 +12,9 @@ Param (
 $CombinedTargetFolder="$($TargetFolder)/$($ChapterName)"
 $CombinedTargetFolder = $CombinedTargetFolder.Replace("[", "(")
 $CombinedTargetFolder = $CombinedTargetFolder.Replace("]", ")")
+$CombinedTargetFolder = $CombinedTargetFolder.Replace("?", "")
 $CombinedTargetFolder = $CombinedTargetFolder.Replace(":", "")
+$CombinedTargetFolder = $CombinedTargetFolder -replace '\s+', ' '
 if (-not(Test-Path $CombinedTargetFolder)) {
 	New-Item -Path $CombinedTargetFolder -ItemType Directory
 }
@@ -22,7 +24,6 @@ if (-not(Test-Path $CombinedTargetFolder)) {
 $ChapterJsonName = "$($CombinedTargetFolder)/manga-$($ChapterId).json"
 
 write-host $ChapterJsonName
-
 
 if (Test-Path $ChapterJsonName) {
 	write-host "chapter json file already exists, we will use that"

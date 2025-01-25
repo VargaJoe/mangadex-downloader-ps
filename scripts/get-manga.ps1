@@ -1,10 +1,15 @@
 Param (
+	# Full URL of the manga on Mangadex
 	[Parameter(Mandatory=$False)]
 	[string]$MangadexUrl,
-    [Parameter(Mandatory=$False)]
+
+	# ID and Title of the manga on Mangadex
+	[Parameter(Mandatory=$False)]
 	[string]$MangaId,
 	[Parameter(Mandatory=$False)]
 	[string]$MangaName="$($MangaId)",
+
+	# Crawler parameters
 	[Parameter(Mandatory=$False)]
 	[string]$Language="en",	
 	[Parameter(Mandatory=$False)]
@@ -19,15 +24,36 @@ Param (
 	[string]$VolFormat="d2",
 	[Parameter(Mandatory=$False)]
 	[string]$ChapFormat="d2",
+
+	# Technical parameters
 	[Parameter(Mandatory=$False)]
 	[string]$TargetFolder="./Output",
 	[Parameter(Mandatory=$False)]
-	[bool]$DryRun=$False
+	[switch]$DryRun
 )
+
 
 # pagination is missing
 
-if ($MangadexUrl) {
+# Get cover image
+if ($true -or $getCover) {
+	$scriptParams = @{
+		MangadexUrl = $MangadexUrl
+		MangaId = $MangaId
+		MangaName = $MangaName
+		TargetFolder = $TargetFolder
+		DryRun = $DryRun
+	}
+
+	$returnedValues = .\get-cover.ps1 @scriptParams
+
+	$MangaName = $returnedValues.MangaName
+	$MangaId = $returnedValues.MangaId
+	$CombinedTargetFolder = $returnedValues.CombinedTargetFolder
+}
+
+if ($MangadexUrl -and -not $MangaName) {
+	# mangainfo should be used instead of this
 	$elements = $MangadexUrl.Split("/")
 	if ($elements[2] -eq "mangadex.org" -and $elements[3] -eq "title") {
 		write-output "Splitting url. Seems OK!"
@@ -46,24 +72,26 @@ if ($MangadexUrl) {
 	}
 }
 
-$CombinedTargetFolder="$($TargetFolder)/$($MangaName)"
+if (-not $CombinedTargetFolder) {
+	$CombinedTargetFolder="$($TargetFolder)/$($MangaName)"
+	$CombinedTargetFolder = $CombinedTargetFolder.Replace("[", "(")
+	$CombinedTargetFolder = $CombinedTargetFolder.Replace("]", ")")
+}
+
 if (-not(Test-Path $CombinedTargetFolder)) {
 	New-Item -Path $CombinedTargetFolder -ItemType Directory
 }
 
-# $CurrentDateTime = "" #Get-Date -format "-yyyy-MM-dd-HH-mm-ss"
-# $MangaLogName = "./manga-$($MangaId)$($CurrentDateTime).log"
-$MangaJsonName = "$($CombinedTargetFolder)/manga-$($MangaId)-($($Language)).json"
-# Write-Output $CurrentDateTime | Tee-Object -FilePath $MangaLogName
+$MangaFeedJsonName = "$($CombinedTargetFolder)/manga-feed-$($MangaId)-($($Language)).json"
 
-write-host $MangaJsonName
+write-host "$MangaName feed json: $MangaFeedJsonName"
 
-if (Test-Path $MangaJsonName) {
-	write-host "manga json file already exists, we will use that"
-	$response = Get-Content $MangaJsonName | ConvertFrom-Json
+if (Test-Path $MangaFeedJsonName) {
+	write-host "manga feed json file already exists, we will use that"
+	$response = Get-Content $MangaFeedJsonName | ConvertFrom-Json
 } else {
-	write-host "manga json file does not exists, we will get from site"
-	$urlPath="manga/$($MangaId)/feed?limit=96&includes[]=scanlation_group&includes[]=user&order[volume]=asc&order[chapter]=asc&offset=0&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic"
+	write-host "manga feed json file does not exists, we will get from site"
+	$urlPath="manga/$($MangaId)/feed?limit=100&includes[]=scanlation_group&includes[]=user&order[volume]=asc&order[chapter]=asc&offset=0&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic"
 	$RequestUrl="https://api.mangadex.org/$($urlPath)"
 
 	$session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
@@ -99,7 +127,7 @@ if (Test-Path $MangaJsonName) {
 
 	write-host $StatusCode
 
-	$response | ConvertTo-Json -depth 100 | Out-File $MangaJsonName
+	$response | ConvertTo-Json -depth 100 | Out-File $MangaFeedJsonName
 } 
 
 write-host "foreach on data"
@@ -164,6 +192,8 @@ foreach($item in $response.data) {
 		$chapterTargetName = $chapterTargetName.Replace("[", "(")
 		$chapterTargetName = $chapterTargetName.Replace("]", ")")
 		$chapterTargetName = $chapterTargetName.Replace("?", "")
+		$chapterTargetName = $chapterTargetName.Replace(":", "")
+		$chapterTargetName = $chapterTargetName -replace '\s+', ' '
 		
 		write-host ""
 		write-host "-------------------------------------------------------------------------------------"
