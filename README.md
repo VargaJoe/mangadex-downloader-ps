@@ -1,18 +1,18 @@
 # mangadex-downloader-ps
 
-This project is inspired by [UnicodingUnicorn
-mangadex-downloader](https://github.com/UnicodingUnicorn/mangadex-downloader), which was written in Go language. But at one point mangadex api has changed and it was no longer functional. I've looked up the new api and összedobtam ezt a kis powershell scriptet, ami a korábbi tool-hoz hasonlóan működik. 
-Note: Időközben UnicodingUnicorn is felkerült egy új verzió [mangadex-downloader-2](https://github.com/UnicodingUnicorn/mangadex-downloader-2), ezúttal Rust nyelvben programozva.
+This project is inspired by [UnicodingUnicorn's mangadex-downloader](https://github.com/UnicodingUnicorn/mangadex-downloader), which was originally written in the Go programming language. However, due to changes in the MangaDex API, the tool became non-functional. After reviewing the updated API, I created this PowerShell script, which functions similarly to the previous tool.
+
+Note: Since then, UnicodingUnicorn has also released a new version of the tool, [mangadex-downloader-2](https://github.com/UnicodingUnicorn/mangadex-downloader-2), now written in Rust.
 
 ## Mangadex-Downloader in PowerShell
 
-Ez egy command line tool, amivel teljes mangákat lehet letölteni a [MangaDex](https://mangadex.org/) oldaláról, így saját gépen szimpla képnézegető programmal olvashatjuk azokat. Használatához meg kell hívni powershell ablakban a `get-manga.ps1` scriptet és `MangadexUrl` paraméterben át kell adni a teljes url-t. 
+This is a command-line tool designed to download entire manga series from [MangaDex](https://mangadex.org/), allowing you to read them locally using any image viewer. To use it, invoke the `get-manga.ps1` script in a PowerShell terminal and provide the manga's full URL using the `MangadexUrl` parameter.
 
 ```powershell
 .\get-manga.ps1 -MangadexUrl https://mangadex.org/title/{mangaid}/{manganame}}
 ```
 
-Ebben az esetben a teljes manga letöltésre kerül angol nyelven. Más nyelv választása a `Language` paraméterrel lehetséges. Például spanyol nyelv választásához:
+You can also specify a preferred language using the `Language` parameter if needed. 
 
 ```powershell
 .\get-manga.ps1 -Language es -MangadexUrl https://mangadex.org/title/{mangaid}/{manganame}}
@@ -20,5 +20,4 @@ Ebben az esetben a teljes manga letöltésre kerül angol nyelven. Más nyelv v�
 
 ## MangaDex API
 
-This tool uses MangaDex API. MangaDex is an ad-free manga reader offering high-quality images.
-https://api.mangadex.org/docs/
+This tool uses the MangaDex API. MangaDex is an ad-free manga reader that offers high-quality images. For more details about the API, visit [MangaDex API Documentation](https://api.mangadex.org/docs/).
