@@ -74,6 +74,11 @@ if (Test-Path $ChapterJsonName) {
 $hash = $response.chapter.hash
 $skip = $true
 
+if ($response.chapter.data.Count -eq 0) {
+	write-host "No data in chapter"
+	return $skip
+}
+
 write-host "foreach on data"
 foreach($item in $response.chapter.data) {
 	$dataPath = "data/$($hash)/$($item)"

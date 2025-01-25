@@ -95,7 +95,7 @@ if (Test-Path $MangaFeedJsonName) {
 	$response = Get-Content $MangaFeedJsonName | ConvertFrom-Json
 } else {
 	write-host "manga feed json file does not exists, we will get from site"
-	$urlPath="manga/$($MangaId)/feed?limit=100&includes[]=scanlation_group&includes[]=user&order[volume]=asc&order[chapter]=asc&offset=0&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic"
+	$urlPath="manga/$($MangaId)/feed?limit=100&translatedLanguage[]=$($Language)&includes[]=scanlation_group&includes[]=user&order[volume]=asc&order[chapter]=asc&offset=0&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic"
 	$RequestUrl="https://api.mangadex.org/$($urlPath)"
 
 	$session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
