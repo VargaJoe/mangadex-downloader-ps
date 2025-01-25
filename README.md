@@ -18,6 +18,8 @@ You can also specify a preferred language using the `Language` parameter if need
 .\get-manga.ps1 -Language es -MangadexUrl https://mangadex.org/title/{mangaid}/{manganame}}
 ```
 
+Further filtering mechanism is missing at this point...
+
 ## MangaDex API
 
 This tool uses the MangaDex API. MangaDex is an ad-free manga reader that offers high-quality images. For more details about the API, visit [MangaDex API Documentation](https://api.mangadex.org/docs/).
