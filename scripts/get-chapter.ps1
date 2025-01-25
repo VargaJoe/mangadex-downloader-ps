@@ -9,12 +9,15 @@ Param (
 	[string]$TargetFolder="./Output"
 )
 
+
+$ChapterName = $ChapterName.Replace("/", "-")
+$ChapterName = $ChapterName.Replace(":", "")
+$ChapterName = $ChapterName.Replace("?", "")
+$ChapterName = $ChapterName.Replace("[", "(")
+$ChapterName = $ChapterName.Replace("]", ")")
+$ChapterName = $ChapterName -replace '\s+', ' '
 $CombinedTargetFolder="$($TargetFolder)/$($ChapterName)"
-$CombinedTargetFolder = $CombinedTargetFolder.Replace("[", "(")
-$CombinedTargetFolder = $CombinedTargetFolder.Replace("]", ")")
-$CombinedTargetFolder = $CombinedTargetFolder.Replace("?", "")
-$CombinedTargetFolder = $CombinedTargetFolder.Replace(":", "")
-$CombinedTargetFolder = $CombinedTargetFolder -replace '\s+', ' '
+
 if (-not(Test-Path $CombinedTargetFolder)) {
 	New-Item -Path $CombinedTargetFolder -ItemType Directory
 }

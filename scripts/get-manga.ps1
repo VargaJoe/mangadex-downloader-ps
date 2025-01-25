@@ -73,9 +73,13 @@ if ($MangadexUrl -and -not $MangaName) {
 }
 
 if (-not $CombinedTargetFolder) {
+	$MangaName = $MangaName.Replace("/", "-")
+	$MangaName = $MangaName.Replace(":", "")
+	$MangaName = $MangaName.Replace("?", "")
+	$MangaName = $MangaName.Replace("[", "(")
+	$MangaName = $MangaName.Replace("]", ")")
+	$MangaName = $MangaName -replace '\s+', ' '
 	$CombinedTargetFolder="$($TargetFolder)/$($MangaName)"
-	$CombinedTargetFolder = $CombinedTargetFolder.Replace("[", "(")
-	$CombinedTargetFolder = $CombinedTargetFolder.Replace("]", ")")
 }
 
 if (-not(Test-Path $CombinedTargetFolder)) {
@@ -187,12 +191,13 @@ foreach($item in $response.data) {
 			# continue
 		# }
 		
-		$chapterTargetName = "$($MangaName) v$($volStr)c$($chapStr) - $($chapterTitle) ($($groupName))"	
+		$chapterTitlePart = if ($chapterTitle) { " - $chapterTitle" } else { "" }
+		$chapterTargetName = "$($MangaName) v$($volStr)c$($chapStr)$($chapterTitlePart) ($($groupName))"
 		$chapterTargetName = $chapterTargetName.Replace("/", "-")
+		$chapterTargetName = $chapterTargetName.Replace(":", "")
+		$chapterTargetName = $chapterTargetName.Replace("?", "")
 		$chapterTargetName = $chapterTargetName.Replace("[", "(")
 		$chapterTargetName = $chapterTargetName.Replace("]", ")")
-		$chapterTargetName = $chapterTargetName.Replace("?", "")
-		$chapterTargetName = $chapterTargetName.Replace(":", "")
 		$chapterTargetName = $chapterTargetName -replace '\s+', ' '
 		
 		write-host ""

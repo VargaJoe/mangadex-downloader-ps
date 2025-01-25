@@ -98,11 +98,13 @@ if (Test-Path $MangaInfoJsonName) {
 
 $mangaCover = ""
 $MangaName = $response.data.attributes.title.en
+$MangaName = $MangaName.Replace("/", "-")
+$MangaName = $MangaName.Replace(":", "")
+$MangaName = $MangaName.Replace("?", "")
+$MangaName = $MangaName.Replace("[", "(")
+$MangaName = $MangaName.Replace("]", ")")
+$MangaName = $MangaName -replace '\s+', ' '
 $CombinedTargetFolder="$($TargetFolder)/$($MangaName)"
-$CombinedTargetFolder = $CombinedTargetFolder.Replace("[", "(")
-$CombinedTargetFolder = $CombinedTargetFolder.Replace("]", ")")
-$CombinedTargetFolder = $CombinedTargetFolder.Replace("?", "")
-$CombinedTargetFolder = $CombinedTargetFolder -replace '\s+', ' '
 
 if (-not(Test-Path $CombinedTargetFolder)) {
 	write-host "Creating $($CombinedTargetFolder) folder"
@@ -118,11 +120,13 @@ foreach($item in $response.data.relationships) {
 		$coverUrl = "https://mangadex.org/covers/$($MangaId)/$($mangaCover)"
 		write-output "cover url is $coverUrl"
 
-		$coverTargetName = "$($MangaName) (cover).$($mangaCoverExt)"	
+		$coverTargetName = "$($MangaName) (cover).$($mangaCoverExt)"
 		$coverTargetName = $coverTargetName.Replace("/", "-")
+		$coverTargetName = $coverTargetName.Replace(":", "")
+		$coverTargetName = $coverTargetName.Replace("?", "")
 		$coverTargetName = $coverTargetName.Replace("[", "(")
 		$coverTargetName = $coverTargetName.Replace("]", ")")
-		$coverTargetName = $coverTargetName.Replace(":", "")
+		$coverTargetName = $coverTargetName -replace '\s+', ' '
 		$coverTargetPath = "$($CombinedTargetFolder)/$($coverTargetName)"	
 		
 		if ($DryRun) {
