@@ -1,29 +1,21 @@
 Param (
+	# Full URL of the manga on Mangadex
 	[Parameter(Mandatory=$False)]
 	[string]$MangadexUrl,
-    [Parameter(Mandatory=$False)]
+
+	# ID and Title of the manga on Mangadex
+	[Parameter(Mandatory=$False)]
 	[string]$MangaId,
-	
 	[Parameter(Mandatory=$False)]
 	[string]$MangaName="$($MangaId)",
-	[Parameter(Mandatory=$False)]
-	[string]$Language="en",	
-	[Parameter(Mandatory=$False)]
-	[int]$VolFrom,
-	[Parameter(Mandatory=$False)]
-	[int]$ChapFrom,
-	[Parameter(Mandatory=$False)]
-	[int]$VolTo,
-	[Parameter(Mandatory=$False)]
-	[int]$ChapTo,
-	[Parameter(Mandatory=$False)]
-	[string]$VolFormat="d2",
-	[Parameter(Mandatory=$False)]
-	[string]$ChapFormat="d2",
+
+	# Technical parameters
 	[Parameter(Mandatory=$False)]
 	[string]$TargetFolder="./Output",
 	[Parameter(Mandatory=$False)]
-	[bool]$DryRun=$False
+	[bool]$SaveInfo = $True,
+	[Parameter(Mandatory=$False)]
+	[switch]$DryRun
 )
 
 # pagination is missing
@@ -47,45 +39,29 @@ if ($MangadexUrl) {
 	}
 }
 
-if (-not(Test-Path $TargetFolder)) {
-	New-Item -Path $TargetFolder -ItemType Directory
-}
 
-$MangaJsonName = "$($TargetFolder)/manga-$($MangaId)-($($Language))-base.json"
+$InfoFolder = "./info"
+$MangaInfoJsonName = "$($InfoFolder)/manga-info-$($MangaId)-$($MangaName).json"
 
-write-host $MangaJsonName
+write-host "$MangaName base info json: $MangaInfoJsonName"
 
-if (Test-Path $MangaJsonName) {
+if (Test-Path $MangaInfoJsonName) {
 	write-host "manga base json file already exists, we will use that"
-	$response = Get-Content $MangaJsonName | ConvertFrom-Json
+	$response = Get-Content $MangaInfoJsonName | ConvertFrom-Json
 } else {
+	if (-not (Test-Path $InfoFolder)) {
+		write-host "Creating $($InfoFolder) folder"
+		New-Item -Path $InfoFolder -ItemType Directory
+	}
+
 	write-host "manga base json file does not exists, we will get from site"
 	$urlPath="manga/$($MangaId)?includes[]=artist&includes[]=author&includes[]=cover_art"
 	$RequestUrl="https://api.mangadex.org/$($urlPath)"
 
-	$session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
-	$session.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.74 Safari/537.36"
 	try
 	{
-		$response = Invoke-RestMethod -UseBasicParsing -Uri $($RequestUrl) `
-			-WebSession $session `
-			-Headers @{
-				"method"="GET"
-				"authority"="api.mangadex.org"
-				"scheme"="https"
-				"path"="/$($urlPath)"
-				"sec-ch-ua"="`" Not A;Brand`";v=`"99`", `"Chromium`";v=`"99`", `"Google Chrome`";v=`"99`""
-				"accept"="application/json, text/plain, */*"
-				"sec-ch-ua-mobile"="?0"
-				"sec-ch-ua-platform"="`"Windows`""
-				"origin"="https://mangadex.org"
-				"sec-fetch-site"="same-site"
-				"sec-fetch-mode"="cors"
-				"sec-fetch-dest"="empty"
-				"referer"="https://mangadex.org/"
-				"accept-encoding"="gzip, deflate, br"
-				"accept-language"="en-US,en;q=0.9,hu-HU;q=0.8,hu;q=0.7"
-			}
+		$response = Invoke-RestMethod -UseBasicParsing -Uri $($RequestUrl) 
+
 		write-host "OK"
 	}
 	catch
@@ -96,17 +72,23 @@ if (Test-Path $MangaJsonName) {
 
 	write-host $StatusCode
 
-	$response | ConvertTo-Json -depth 100 | Out-File $MangaJsonName
+	if ($SaveInfo) {
+		$response | ConvertTo-Json -depth 100 | Out-File $MangaInfoJsonName
+	}
 } 
 
-$MangaName = $response.data.attributes.title.en
-$CombinedTargetFolder="$($TargetFolder)/$($MangaName)"
-$CombinedTargetFolder = $CombinedTargetFolder.Replace("[", "(")
-$CombinedTargetFolder = $CombinedTargetFolder.Replace("]", ")")
-$CombinedTargetFolder = $CombinedTargetFolder.Replace(":", "")
 $mangaCover = ""
+$MangaName = $response.data.attributes.title.en
+$MangaName = $MangaName.Replace("/", "-")
+$MangaName = $MangaName.Replace(":", "")
+$MangaName = $MangaName.Replace("?", "")
+$MangaName = $MangaName.Replace("[", "(")
+$MangaName = $MangaName.Replace("]", ")")
+$MangaName = $MangaName -replace '\s+', ' '
+$CombinedTargetFolder="$($TargetFolder)/$($MangaName)"
 
 if (-not(Test-Path $CombinedTargetFolder)) {
+	write-host "Creating $($CombinedTargetFolder) folder"
 	New-Item -Path $CombinedTargetFolder -ItemType Directory
 }
 
@@ -119,11 +101,13 @@ foreach($item in $response.data.relationships) {
 		$coverUrl = "https://mangadex.org/covers/$($MangaId)/$($mangaCover)"
 		write-output "cover url is $coverUrl"
 
-		$coverTargetName = "$($MangaName) (cover).$($mangaCoverExt)"	
+		$coverTargetName = "$($MangaName) (cover).$($mangaCoverExt)"
 		$coverTargetName = $coverTargetName.Replace("/", "-")
+		$coverTargetName = $coverTargetName.Replace(":", "")
+		$coverTargetName = $coverTargetName.Replace("?", "")
 		$coverTargetName = $coverTargetName.Replace("[", "(")
 		$coverTargetName = $coverTargetName.Replace("]", ")")
-		$coverTargetName = $coverTargetName.Replace(":", "")
+		$coverTargetName = $coverTargetName -replace '\s+', ' '
 		$coverTargetPath = "$($CombinedTargetFolder)/$($coverTargetName)"	
 		
 		if ($DryRun) {
@@ -133,29 +117,13 @@ foreach($item in $response.data.relationships) {
 			# here should be a force logic if turned on
 		} else {	
 			write-host "Download $($coverUrl) to $($coverTargetPath)"			
-			Invoke-WebRequest -UseBasicParsing -Uri $($coverUrl) `
-				-OutFile $coverTargetPath `
-				-WebSession $session `
-				-Headers @{
-					"method"="GET"
-					"authority"="api.mangadex.org"
-					"scheme"="https"
-					"path"="/$($dataPath)"
-					"sec-ch-ua"="`" Not A;Brand`";v=`"99`", `"Chromium`";v=`"99`", `"Google Chrome`";v=`"99`""
-					"accept"="application/json, text/plain, */*"
-					"sec-ch-ua-mobile"="?0"
-					"sec-ch-ua-platform"="`"Windows`""
-					"origin"="https://mangadex.org"
-					"sec-fetch-site"="same-site"
-					"sec-fetch-mode"="cors"
-					"sec-fetch-dest"="empty"
-					"referer"="https://mangadex.org/"
-					"accept-encoding"="gzip, deflate, br"
-					"accept-language"="en-US,en;q=0.9,hu-HU;q=0.8,hu;q=0.7"
-				}
+			Invoke-WebRequest -UseBasicParsing -Uri $($coverUrl) -OutFile $coverTargetPath 
 		}		
 	}
 }
 
-.\get-manga.ps1 -MangaId $MangaId -MangaName $MangaName -Language $Language -VolFrom $VolFrom -ChapFrom $ChapFrom -VolTo $VolTo -ChapTo $ChapTo -VolFormat $VolFormat -ChapFormat $ChapFormat -TargetFolder $TargetFolder -DryRun $DryRun
-
+return @{
+    MangaId = $MangaId
+    MangaName = $MangaName
+    CombinedTargetFolder = $CombinedTargetFolder
+}
