@@ -86,143 +86,154 @@ if (-not(Test-Path $CombinedTargetFolder)) {
 	New-Item -Path $CombinedTargetFolder -ItemType Directory
 }
 
-$MangaFeedJsonName = "$($CombinedTargetFolder)/manga-feed-$($MangaId)-($($Language)).json"
+$page = 1
+$limit = 100
+$total = $limit # just to start the loop
+$offset = 0
 
-write-host "$MangaName feed json: $MangaFeedJsonName"
+do {
+	$MangaFeedJsonName = "$($CombinedTargetFolder)/manga-feed-$($MangaId)-($($Language))-($($page)).json"
+	write-host "$MangaName feed json: $MangaFeedJsonName"
 
-if (Test-Path $MangaFeedJsonName) {
-	write-host "manga feed json file already exists, we will use that"
-	$response = Get-Content $MangaFeedJsonName | ConvertFrom-Json
-} else {
-	write-host "manga feed json file does not exists, we will get from site"
-	$urlPath="manga/$($MangaId)/feed?limit=100&translatedLanguage[]=$($Language)&includes[]=scanlation_group&includes[]=user&order[volume]=asc&order[chapter]=asc&offset=0&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic"
-	$RequestUrl="https://api.mangadex.org/$($urlPath)"
+	if (Test-Path $MangaFeedJsonName) {
+		write-host "manga feed json file already exists, we will use that"
+		$response = Get-Content $MangaFeedJsonName | ConvertFrom-Json
+	} else {
+		write-host "manga feed json file does not exists, we will get from site"
+		$urlPath="manga/$($MangaId)/feed?limit=$($limit)&translatedLanguage[]=$($Language)&includes[]=scanlation_group&includes[]=user&order[volume]=asc&order[chapter]=asc&offset=$($offset)&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic"
+		$RequestUrl="https://api.mangadex.org/$($urlPath)"
 
-	$session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
-	$session.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.74 Safari/537.36"
-	try
-	{
-		$response = Invoke-RestMethod -UseBasicParsing -Uri $($RequestUrl) `
-			-WebSession $session `
-			-Headers @{
-				"method"="GET"
-				"authority"="api.mangadex.org"
-				"scheme"="https"
-				"path"="/$($urlPath)"
-				"sec-ch-ua"="`" Not A;Brand`";v=`"99`", `"Chromium`";v=`"99`", `"Google Chrome`";v=`"99`""
-				"accept"="application/json, text/plain, */*"
-				"sec-ch-ua-mobile"="?0"
-				"sec-ch-ua-platform"="`"Windows`""
-				"origin"="https://mangadex.org"
-				"sec-fetch-site"="same-site"
-				"sec-fetch-mode"="cors"
-				"sec-fetch-dest"="empty"
-				"referer"="https://mangadex.org/"
-				"accept-encoding"="gzip, deflate, br"
-				"accept-language"="en-US,en;q=0.9,hu-HU;q=0.8,hu;q=0.7"
-			}
-		write-host "OK"
-	}
-	catch
-	{
-		$StatusCode = $_.Exception.Response.StatusCode.value__
-		write-host "Error"
-	}
-
-	write-host $StatusCode
-
-	$response | ConvertTo-Json -depth 100 | Out-File $MangaFeedJsonName
-} 
-
-write-host "foreach on data"
-foreach($item in $response.data) {
-	if ($Language -eq "" -or $Language -eq $item.attributes.translatedLanguage) {
-		$chapterid = $item.id
-		$chapterTitle = $item.attributes.title
-		$group = $item.relationships[0]
-		$groupName = "unknown"
-		if ($group.type -eq "scanlation_group") {
-			$groupName = $group.attributes.name
+		$session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+		$session.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.74 Safari/537.36"
+		try
+		{
+			$response = Invoke-RestMethod -UseBasicParsing -Uri $($RequestUrl) `
+				-WebSession $session `
+				-Headers @{
+					"method"="GET"
+					"authority"="api.mangadex.org"
+					"scheme"="https"
+					"path"="/$($urlPath)"
+					"sec-ch-ua"="`" Not A;Brand`";v=`"99`", `"Chromium`";v=`"99`", `"Google Chrome`";v=`"99`""
+					"accept"="application/json, text/plain, */*"
+					"sec-ch-ua-mobile"="?0"
+					"sec-ch-ua-platform"="`"Windows`""
+					"origin"="https://mangadex.org"
+					"sec-fetch-site"="same-site"
+					"sec-fetch-mode"="cors"
+					"sec-fetch-dest"="empty"
+					"referer"="https://mangadex.org/"
+					"accept-encoding"="gzip, deflate, br"
+					"accept-language"="en-US,en;q=0.9,hu-HU;q=0.8,hu;q=0.7"
+				}
+			write-host "OK"
 		}
-				
-		$volNum = [int]$item.attributes.volume
-		$volStr = "{0:$VolFormat}" -f $volNum
-		
-		$chapNum = [int]$item.attributes.chapter
-		$chapStr = "{0:$ChapFormat}" -f $chapNum
-		
-		# hagyd ki ha
-		# ha volfrom meg van adva chapfromot leszarom és a volnum kisebb, mint a volfrom
-		# ha a volfrom nincs megadva, chapfrom megvan adva volnum vagy null vagy 0 vagy 1 (de a három közül csak az elsőre kellene működnie) és chapnum kisebb, mint a chapfrom 
-			# (első találatkor be kellene állítani, melyik opció a három közül?)
-			# (VAGY ez csak az első kötetre érvényes és ha van korábbi null vagy 0 kötet, akkor abból mindent leszedek VAGY ugyanez de ezekből semmit nem szedek le)
-			# # (utóbbi lehet az alap és egy plusz kapcsoló, hogy kellenek-e az extra kötetek 0/null vagy sem)
-		# ha a volfrom meg van adva és a chapfrom is meg van adva, a volnum megegyezik a volfrommal és chapnum kisebb, mint a chapfrom
-		# if (
-			# (
-				# $VolFrom 
-				# -and 
-				# (
-					# $volNum -lt $VolFrom 
-					# -or 
-					# (
-						# $ChapFrom 
-						# -and 
-						# ($VolNum -eq $VolFrom -and $chapNum -lt $ChapFrom)
-						# -and 
-					# )
-				# )
-			# ) 
-			# -or
-			# (
-				# $VolTo 
-				# -and 
-				# (
-					# $VolTo -gt $volNum
-					# -or 
-					# (
-						# $ChapTo
-						# -and 
-						# $ChapTo -gt $chapNum
-					# )
-				# )
-			# )
-		# ) {
-			# continue
-		# }
-		
-		$chapterTitlePart = if ($chapterTitle) { " - $chapterTitle" } else { "" }
-		$chapterTargetName = "$($MangaName) v$($volStr)c$($chapStr)$($chapterTitlePart) ($($groupName))"
-		$chapterTargetName = $chapterTargetName.Replace("/", "-")
-		$chapterTargetName = $chapterTargetName.Replace(":", "")
-		$chapterTargetName = $chapterTargetName.Replace("?", "")
-		$chapterTargetName = $chapterTargetName.Replace("[", "(")
-		$chapterTargetName = $chapterTargetName.Replace("]", ")")
-		$chapterTargetName = $chapterTargetName -replace '\s+', ' '
-		
-		write-host ""
-		write-host "-------------------------------------------------------------------------------------"
-		write-host "$($item.type) `t $($item.attributes.translatedLanguage) `t $($item.attributes.volume)/$($item.attributes.chapter) `t $($item.attributes.title)"
-		write-host "-------------------------------------------------------------------------------------"
-		# write-host "$item.attributes.pages"
-		# write-host "$item.attributes.version"
-		
-		# write exception to file
-		
-		if ($item.type -eq "chapter") {
-			write-host "call chapter downloader"
-			# TODO: add manga name + target folder OR chaptername ????
-			$npcReaderTime = Get-Random -Minimum 10 -Maximum 20
-			$skip = (./get-chapter.ps1 -ChapterId $($chapterid) -DryRun $DryRun -ChapterName $chapterTargetName -TargetFolder $CombinedTargetFolder)
-			
-			if ($skip -eq $true) {
-				write-output "no download happened, no wait time needed"
-				$npcReaderTime = 1
-			}
-			
-			# if no download has been made sleep time should be lower or zero
-			write-host "Wait for it! ($npcReaderTime)"
-			Start-Sleep -Seconds $npcReaderTime
-		}		
+		catch
+		{
+			$StatusCode = $_.Exception.Response.StatusCode.value__
+			write-host "Error"
+		}
+
+		write-host $StatusCode
+
+		$response | ConvertTo-Json -depth 100 | Out-File $MangaFeedJsonName
 	}
-}
+	$total= $response.total
+
+	write-host "foreach on data"
+	foreach($item in $response.data) {
+		if ($Language -eq "" -or $Language -eq $item.attributes.translatedLanguage) {
+			$chapterid = $item.id
+			$chapterTitle = $item.attributes.title
+			$group = $item.relationships[0]
+			$groupName = "unknown"
+			if ($group.type -eq "scanlation_group") {
+				$groupName = $group.attributes.name
+			}
+					
+			$volNum = [int]$item.attributes.volume
+			$volStr = "{0:$VolFormat}" -f $volNum
+			
+			$chapNum = [int]$item.attributes.chapter
+			$chapStr = "{0:$ChapFormat}" -f $chapNum
+			
+			# hagyd ki ha
+			# ha volfrom meg van adva chapfromot leszarom és a volnum kisebb, mint a volfrom
+			# ha a volfrom nincs megadva, chapfrom megvan adva volnum vagy null vagy 0 vagy 1 (de a három közül csak az elsőre kellene működnie) és chapnum kisebb, mint a chapfrom 
+				# (első találatkor be kellene állítani, melyik opció a három közül?)
+				# (VAGY ez csak az első kötetre érvényes és ha van korábbi null vagy 0 kötet, akkor abból mindent leszedek VAGY ugyanez de ezekből semmit nem szedek le)
+				# # (utóbbi lehet az alap és egy plusz kapcsoló, hogy kellenek-e az extra kötetek 0/null vagy sem)
+			# ha a volfrom meg van adva és a chapfrom is meg van adva, a volnum megegyezik a volfrommal és chapnum kisebb, mint a chapfrom
+			# if (
+				# (
+					# $VolFrom 
+					# -and 
+					# (
+						# $volNum -lt $VolFrom 
+						# -or 
+						# (
+							# $ChapFrom 
+							# -and 
+							# ($VolNum -eq $VolFrom -and $chapNum -lt $ChapFrom)
+							# -and 
+						# )
+					# )
+				# ) 
+				# -or
+				# (
+					# $VolTo 
+					# -and 
+					# (
+						# $VolTo -gt $volNum
+						# -or 
+						# (
+							# $ChapTo
+							# -and 
+							# $ChapTo -gt $chapNum
+						# )
+					# )
+				# )
+			# ) {
+				# continue
+			# }
+			
+			$chapterTitlePart = if ($chapterTitle) { " - $chapterTitle" } else { "" }
+			$chapterTargetName = "$($MangaName) v$($volStr)c$($chapStr)$($chapterTitlePart) ($($groupName))"
+			$chapterTargetName = $chapterTargetName.Replace("/", "-")
+			$chapterTargetName = $chapterTargetName.Replace(":", "")
+			$chapterTargetName = $chapterTargetName.Replace("?", "")
+			$chapterTargetName = $chapterTargetName.Replace("[", "(")
+			$chapterTargetName = $chapterTargetName.Replace("]", ")")
+			$chapterTargetName = $chapterTargetName -replace '\s+', ' '
+			
+			write-host ""
+			write-host "-------------------------------------------------------------------------------------"
+			write-host "$($item.type) `t $($item.attributes.translatedLanguage) `t $($item.attributes.volume)/$($item.attributes.chapter) `t $($item.attributes.title)"
+			write-host "-------------------------------------------------------------------------------------"
+			# write-host "$item.attributes.pages"
+			# write-host "$item.attributes.version"
+			
+			# write exception to file
+			
+			if ($item.type -eq "chapter") {
+				write-host "call chapter downloader"
+				# TODO: add manga name + target folder OR chaptername ????
+				$npcReaderTime = Get-Random -Minimum 10 -Maximum 20
+				$skip = (./get-chapter.ps1 -ChapterId $($chapterid) -DryRun $DryRun -ChapterName $chapterTargetName -TargetFolder $CombinedTargetFolder)
+				
+				if ($skip -eq $true) {
+					write-output "no download happened, no wait time needed"
+					$npcReaderTime = 1
+				}
+				
+				# if no download has been made sleep time should be lower or zero
+				write-host "Wait for it! ($npcReaderTime)"
+				Start-Sleep -Seconds $npcReaderTime
+			}
+		}
+	}
+
+	$page++	
+	$offset += $limit
+	write-host "page: $page - offset: $offset - total: $total"
+} until ($page * $offset -ge $total)
