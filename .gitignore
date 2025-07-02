@@ -1,5 +1,5 @@
 scripts/Output*
-scripts/info/*
+scripts/info*
 .github/*.md
 .vscode/*
 docs/!*.md
