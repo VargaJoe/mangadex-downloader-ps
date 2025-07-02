@@ -1,7 +1,7 @@
 # Implementation Tasks for mangadex-downloader-ps
 
 ## Completed Stories
-- None yet
+- **Documentation Update** - Updated README.md to properly document all current features, parameters, usage examples, and project roadmap (July 2, 2025)
 
 ## In Progress Stories
 - None yet
