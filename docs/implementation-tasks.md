@@ -10,6 +10,7 @@
 - [x] Update scripts to handle paginated API responses
 - [x] Test with large manga series
 - [x] Update documentation with usage examples
+- [x] Implement and document robust volume/chapter filtering (VolFrom, VolTo, ChapFrom, ChapTo) with edge case handling
 
 ## Planned Stories
 
