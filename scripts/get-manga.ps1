@@ -91,7 +91,8 @@ $limit = 100
 $total = $limit # just to start the loop
 $offset = 0
 
-do {
+# Pagination loop
+Do {
 	$MangaFeedJsonName = "$($CombinedTargetFolder)/manga-feed-$($MangaId)-($($Language))-($($page)).json"
 	write-host "$MangaName feed json: $MangaFeedJsonName"
 
@@ -103,22 +104,19 @@ do {
 		$urlPath="manga/$($MangaId)/feed?limit=$($limit)&translatedLanguage[]=$($Language)&includes[]=scanlation_group&includes[]=user&order[volume]=asc&order[chapter]=asc&offset=$($offset)&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic"
 		$RequestUrl="https://api.mangadex.org/$($urlPath)"
 
-		try
-		{
-			$response = Invoke-RestMethod -UseBasicParsing -Uri $($RequestUrl) 
+		try {
+			$response = Invoke-RestMethod -UseBasicParsing -Uri $($RequestUrl)
 			write-host "OK"
-		}
-		catch
-		{
+		} catch {
 			$StatusCode = $_.Exception.Response.StatusCode.value__
 			write-host "Error"
 		}
 
 		write-host $StatusCode
-
 		$response | ConvertTo-Json -depth 100 | Out-File $MangaFeedJsonName
 	}
-	$total= $response.total
+
+	$total = $response.total
 
 	write-host "foreach on data"
 	foreach($item in $response.data) {
@@ -137,45 +135,17 @@ do {
 			$chapNum = [int]$item.attributes.chapter
 			$chapStr = "{0:$ChapFormat}" -f $chapNum
 			
-			# hagyd ki ha
-			# ha volfrom meg van adva chapfromot leszarom és a volnum kisebb, mint a volfrom
-			# ha a volfrom nincs megadva, chapfrom megvan adva volnum vagy null vagy 0 vagy 1 (de a három közül csak az elsőre kellene működnie) és chapnum kisebb, mint a chapfrom 
-				# (első találatkor be kellene állítani, melyik opció a három közül?)
-				# (VAGY ez csak az első kötetre érvényes és ha van korábbi null vagy 0 kötet, akkor abból mindent leszedek VAGY ugyanez de ezekből semmit nem szedek le)
-				# # (utóbbi lehet az alap és egy plusz kapcsoló, hogy kellenek-e az extra kötetek 0/null vagy sem)
-			# ha a volfrom meg van adva és a chapfrom is meg van adva, a volnum megegyezik a volfrommal és chapnum kisebb, mint a chapfrom
-			# if (
-				# (
-					# $VolFrom 
-					# -and 
-					# (
-						# $volNum -lt $VolFrom 
-						# -or 
-						# (
-							# $ChapFrom 
-							# -and 
-							# ($VolNum -eq $VolFrom -and $chapNum -lt $ChapFrom)
-							# -and 
-						# )
-					# )
-				# ) 
-				# -or
-				# (
-					# $VolTo 
-					# -and 
-					# (
-						# $VolTo -gt $volNum
-						# -or 
-						# (
-							# $ChapTo
-							# -and 
-							# $ChapTo -gt $chapNum
-						# )
-					# )
-				# )
-			# ) {
-				# continue
-			# }
+			# Filtering logic for VolFrom, VolTo, ChapFrom, ChapTo
+			if (
+				($VolFrom -and $volNum -lt $VolFrom) -or
+				($VolTo -and $volNum -gt $VolTo) -or
+				($VolFrom -and $ChapFrom -and $volNum -eq $VolFrom -and $chapNum -lt $ChapFrom) -or
+				($VolTo -and $ChapTo -and $volNum -eq $VolTo -and $chapNum -gt $ChapTo) -or
+				(-not $VolFrom -and $ChapFrom -and ($volNum -eq 0 -or $volNum -eq 1 -or $volNum -eq $null) -and $chapNum -lt $ChapFrom)
+			) {
+				write-host "Skipping chapter: Volume $volNum, Chapter $chapNum (filtered by range)"
+				continue
+			}
 			
 			$chapterTitlePart = if ($chapterTitle) { " - $chapterTitle" } else { "" }
 			$chapterTargetName = "$($MangaName) v$($volStr)c$($chapStr)$($chapterTitlePart) ($($groupName))"
@@ -213,7 +183,7 @@ do {
 		}
 	}
 
-	$page++	
+	$page++
 	$offset += $limit
 	write-host "page: $page - offset: $offset - total: $total"
-} until ($page * $offset -ge $total)
+} while ($offset -lt $total)
