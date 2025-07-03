@@ -199,3 +199,25 @@ This project is available under the terms specified in the [LICENSE](LICENSE) fi
 4. **File Path Issues**: Ensure the target folder path exists and is writable
 
 For more detailed troubleshooting, enable verbose output or use the `-DryRun` parameter to test configurations.
+
+### Volume and Chapter Filtering Details
+
+The script supports advanced filtering using the following parameters:
+- `-VolFrom`: Start from this volume (inclusive)
+- `-VolTo`: End at this volume (inclusive)
+- `-ChapFrom`: Start from this chapter (inclusive)
+- `-ChapTo`: End at this chapter (inclusive)
+
+**How filtering works:**
+- If `-VolFrom` is set, all chapters with a lower volume are skipped.
+- If `-VolTo` is set, all chapters with a higher volume are skipped.
+- If both `-VolFrom` and `-ChapFrom` are set, chapters in the starting volume with a chapter number lower than `-ChapFrom` are skipped.
+- If both `-VolTo` and `-ChapTo` are set, chapters in the ending volume with a chapter number higher than `-ChapTo` are skipped.
+- If only `-ChapFrom` is set (and no `-VolFrom`), chapters in volume 0, 1, or null with a chapter number lower than `-ChapFrom` are skipped. This helps when a manga starts with special/extra volumes.
+
+**Examples:**
+- `-VolFrom 2 -ChapFrom 5`: Only chapters from volume 2, chapter 5 onward (and all later volumes) are included.
+- `-VolTo 10 -ChapTo 3`: Only chapters up to volume 10, chapter 3 (and all earlier volumes) are included.
+- `-ChapFrom 7`: Only chapters 7 and above in volume 0, 1, or null are included (useful for one-shot/specials).
+
+Chapters outside these ranges are automatically skipped during processing.
