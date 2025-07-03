@@ -93,6 +93,25 @@ Download a specific chapter:
 .\get-chapter.ps1 -ChapterId "{chapter-id}" -ChapterName "Chapter Title"
 ```
 
+### Pagination Support
+
+The script automatically handles MangaDex API pagination for large manga series. When a manga has more chapters than can be returned in a single API response, the script will:
+- Fetch chapters in batches (default: 100 per request)
+- Continue requesting additional pages until all chapters are processed
+- Create output folders and files for each batch, ensuring no chapters are missed
+
+**You do not need to specify any extra parameters for pagination.**
+
+#### Example (no actual manga link shown):
+```powershell
+# Download all chapters for a manga (pagination handled automatically)
+cd scripts
+./get-manga.ps1 -MangaId <manga-id> -MangaName <manga-name> -Language en -TargetFolder ../Output -DryRun
+```
+
+- The script will create multiple `manga-feed-<manga-id>-(en)-(page).json` files and chapter folders as needed.
+- Pagination is transparent to the user; all chapters are processed regardless of total count.
+
 ## Parameters Reference
 
 ### get-manga.ps1 Parameters

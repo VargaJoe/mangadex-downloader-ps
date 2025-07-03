@@ -1,18 +1,17 @@
 # Implementation Tasks for mangadex-downloader-ps
 
 ## Completed Stories
-- **Documentation Update** - Updated README.md to properly document all current features, parameters, usage examples, and project roadmap (July 2, 2025)
+- ### Documentation Update
+- [x] Updated README.md to properly document all current features, parameters, usage examples, and project roadmap (July 2, 2025)
 
 ## In Progress Stories
-- None yet
+### Story 01: Pagination Support - Started July 3, 2025
+- [x] Analyze MangaDex API pagination requirements
+- [x] Update scripts to handle paginated API responses
+- [x] Test with large manga series
+- [x] Update documentation with usage examples
 
 ## Planned Stories
-
-### Story 01: Pagination Support
-- [ ] Analyze MangaDex API pagination requirements
-- [ ] Update scripts to handle paginated API responses
-- [ ] Test with large manga series
-- [ ] Update documentation with usage examples
 
 ### Story 02: Advanced Filtering
 - [ ] Research available filtering options in MangaDex API

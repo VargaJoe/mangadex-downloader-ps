@@ -91,7 +91,8 @@ $limit = 100
 $total = $limit # just to start the loop
 $offset = 0
 
-do {
+# Pagination loop
+Do {
 	$MangaFeedJsonName = "$($CombinedTargetFolder)/manga-feed-$($MangaId)-($($Language))-($($page)).json"
 	write-host "$MangaName feed json: $MangaFeedJsonName"
 
@@ -103,22 +104,19 @@ do {
 		$urlPath="manga/$($MangaId)/feed?limit=$($limit)&translatedLanguage[]=$($Language)&includes[]=scanlation_group&includes[]=user&order[volume]=asc&order[chapter]=asc&offset=$($offset)&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic"
 		$RequestUrl="https://api.mangadex.org/$($urlPath)"
 
-		try
-		{
-			$response = Invoke-RestMethod -UseBasicParsing -Uri $($RequestUrl) 
+		try {
+			$response = Invoke-RestMethod -UseBasicParsing -Uri $($RequestUrl)
 			write-host "OK"
-		}
-		catch
-		{
+		} catch {
 			$StatusCode = $_.Exception.Response.StatusCode.value__
 			write-host "Error"
 		}
 
 		write-host $StatusCode
-
 		$response | ConvertTo-Json -depth 100 | Out-File $MangaFeedJsonName
 	}
-	$total= $response.total
+
+	$total = $response.total
 
 	write-host "foreach on data"
 	foreach($item in $response.data) {
@@ -213,7 +211,7 @@ do {
 		}
 	}
 
-	$page++	
+	$page++
 	$offset += $limit
 	write-host "page: $page - offset: $offset - total: $total"
-} until ($page * $offset -ge $total)
+} while ($offset -lt $total)
